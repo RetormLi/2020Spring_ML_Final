@@ -32,3 +32,6 @@ https://github.com/Michelia-zhx/Huaweicloud_Competition_Traffic/blob/master/clea
 关键在于地理位置，和街道的欧氏距离，以及确定车辆的团簇
 
 时间可能也是一个重要的指标
+
+## 存在的疑问
+utc时间？
