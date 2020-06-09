@@ -14,9 +14,9 @@
 -   gps_records：五个字段一组
     -   lng：经度
     -   lat：纬度
-    -   speed：速度
+    -   speed：速度，单位为m/s
     -   direction：方向
-    -   time：记录时间
+    -   time：记录时间，时区为UTC
 
 ## 目前的一些参考
 
@@ -47,5 +47,8 @@ https://github.com/Michelia-zhx/Huaweicloud_Competition_Traffic/blob/master/clea
 
 当前街道的tti也和附近的街道的tti相关。同样，当前街道和附近街道的速度特征也是都要考虑的。
 
+关于时序，可以用RNN处理。
 ## 存在的疑问
 utc时间？
+
+听说出租车的速度和给出的路段速度无关？
