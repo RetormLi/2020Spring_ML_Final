@@ -12,7 +12,7 @@ def gps_str_to_list(gps_data):
                        float(gps_list[i][1]),
                        round(float(gps_list[i][2])*3.6, 1),
                        pd.to_datetime(gps_list[i][4], unit='s', utc=True).tz_convert(
-            "Asia/Shanghai").to_period("S").strftime('%Y-%m-%d %H:%M:%S')]
+            "Asia/Shanghai").to_period("S").strftime('%Y/%m/%d %H:%M:%S')]
     return gps_list
 
 

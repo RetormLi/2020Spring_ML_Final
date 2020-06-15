@@ -33,7 +33,7 @@ https://github.com/Michelia-zhx/Huaweicloud_Competition_Traffic/blob/master/clea
 
 关键在于地理位置，和街道的欧氏（曼哈顿？）距离，以及确定车辆的团簇
 
-时间可能也是一个重要的指标，比如上下班时间可能堵车。但是又要防止学习器只学习时间导致过拟合。
+时间可能也是一个重要的指标，比如上下班时间可能堵车，，比如工作日和周末的拥堵程度不同。但是又要防止学习器只学习时间导致过拟合。
 
 可以取距离街道在某一个曼哈顿距离的范数圆中的所有车辆，车辆总数，计算数量，平均速度等等。范数圆是否够好呢？街道是狭长的区域。（但也许并不需要那么复杂）
 
@@ -49,6 +49,4 @@ https://github.com/Michelia-zhx/Huaweicloud_Competition_Traffic/blob/master/clea
 
 关于时序，可以用RNN处理。
 ## 存在的疑问
-utc时间？
-
 听说出租车的速度和给出的路段速度无关？
