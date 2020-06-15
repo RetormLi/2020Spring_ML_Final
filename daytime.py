@@ -2,7 +2,7 @@ import pandas as pd
 import datetime
 
 
-def time_day(dateTime):
+def gps_time_transfer(dateTime):
     daylist = dateTime.split()
     weekday = (int(datetime.datetime.strptime(daylist[0],'%Y/%m/%d').strftime("%w"))+1)/7
     time = (int(daylist[1].split(":")[0])*3600 + int(daylist[1].split(":")[1])*60 + int(daylist[1].split(":")[2]))/86400
@@ -14,7 +14,7 @@ def gps_str_to_list(gps_data):
     gps_list = [i.split() for i in gps_list]
     for i in range(len(gps_list)):
         # 去除方向数据, 切分时间数据
-        day, weekday, time = time_day(pd.to_datetime(gps_list[i][4], unit='s', utc=True).tz_convert(
+        day, weekday, time = gps_time_transfer(pd.to_datetime(gps_list[i][4], unit='s', utc=True).tz_convert(
             "Asia/Shanghai").to_period("S").strftime('%Y/%m/%d %H:%M:%S'))
         gps_list[i] = [float(gps_list[i][0]),
                        float(gps_list[i][1]),
