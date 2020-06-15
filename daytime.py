@@ -25,24 +25,15 @@ def gps_str_to_list(gps_data):
     return gps_list
 
 
-def tti_time_transfer(dateTime):
-    daylist = dateTime.split()
-    weekday = (int(datetime.datetime.strptime(daylist[0],'%Y-%m-%d').strftime("%w"))+1)/7
-    time = (int(daylist[1].split(":")[0])*3600 + int(daylist[1].split(":")[1])*60)/86400
-    return daylist[0], weekday, time  
-
-
 def preprocess_tti(tti_data):
     tti_data['id_road'] = tti_data['id_road'].astype(str)
     tti_data['TTI'] = tti_data['TTI'].astype(float)
     tti_data['speed'] = tti_data['speed'].astype(float)
     tti_data['time'] = pd.to_datetime(
         tti_data['time'], infer_datetime_format=True)
-    tti_data['day'] = ''  # 日期
-    tti_data['weekday'] = ''  # 周日-周六：1/7-7/7
-    tti_data['daytime'] = ''  # 归一化的当日时间
-    for i in range(len(tti_data['time'])):
-        tti_data['day'][i], tti_data['weekday'][i], tti_data['daytime'][i] = tti_time_transfer(str(tti_data['time'][i]))
+    tti_data['day'] = tti_data['time'].apply(lambda x : str(x).split()[0])
+    tti_data['weekday'] = (tti_data['time'].apply(lambda x : int(datetime.datetime.strptime(str(x).split()[0],'%Y-%m-%d').strftime("%w")))+1)/7
+    tti_data['daytime'] = (tti_data['time'].apply(lambda x : int(str(x).split()[1].split(":")[0]))*3600 + tti_data['time'].apply(lambda x : int(str(x).split()[1].split(":")[1]))*60 + tti_data['time'].apply(lambda x : int(str(x).split()[1].split(":")[2])))/86400
     tti_data = tti_data.drop(columns = 'time')
     return tti_data
 
