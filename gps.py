@@ -22,7 +22,7 @@ roads = {
                            (114.031416, 22.60779),
                            (114.032451, 22.608082),
                            (114.039827, 22.599866)],
-    ('276737', '276738'): [(114.030832, 22.602214),
+    ('276738', '276737'): [(114.030832, 22.602214),
                            (114.023188, 22.609672),
                            (114.024518, 22.610044),
                            (114.031664, 22.602551)]
@@ -44,13 +44,23 @@ roads_direction = {
     '276265': 4,
     '276268': 3,
     '276269': 4,
-    '276737': 4,
     '276738': 3,
+    '276737': 4,
 },
 
 
 def get_road(direction, roads):
     directions = [roads_direction[roads[0]], roads_direction[roads[1]]]
+    if directions == [1, 2]:
+        if 0 <= direction < 180:
+            return roads[0]
+        else:
+            return roads[1]
+    else:
+        if 90 <= direction < 270:
+            return roads[1]
+        else:
+            return roads[0]
 
 
 def get_block_rec(block):
