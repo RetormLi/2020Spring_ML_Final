@@ -42,21 +42,21 @@ def generate_time_transfer():
 
 def generate_Train(tti_data):
     # 共12个路段，每个时间段共6个时间点，12*6=72维数据，加上星期几标志weekday，
-    # 时间段标志time_slot，预测时间点标志time_point，预测路段标志id_road，作为Index
+    # 时间段标志time_slot，预测时间点标志time_point，预测路段标志id_road，处理每日数据时作为Index方便查找
     columns = [str(id_road) + '_' + str(feature_time_point) for id_road in id_roads for feature_time_point in range(6)] + ['weekday']#, 'time_slot', 'time_point', 'id_road']
     # 每天共12个路段，每天共14个预测时间段，每个时间段共3个时间点，共12*14*3=504个样本（行）
     
     index = pd.MultiIndex.from_product([range(14), range(3), id_roads], names=['time_slot', 'time_point', 'id_road'])
     
     train_X = pd.DataFrame(columns=columns)
-    train_y = pd.Series(dtype='float64')
+    train_y = pd.Series(dtype='float64', name='label')
     # daily_data = [[np.nan] * 73 + [time_slot, time_point, id_road] for time_slot in range(14) for time_point in range(3) for id_road in id_roads]
     for (_, weekday), daily_tti_data in tti_data.groupby(['date', 'weekday']):
         del daily_tti_data['date']
         del daily_tti_data['weekday']
         daily_trian_X = pd.DataFrame(index=index, columns=columns)
         daily_trian_X['weekday'] = weekday
-        daily_trian_y = pd.Series(index=index, dtype='float64')
+        daily_trian_y = pd.Series(index=index, dtype='float64', name='label')
 
         for row in daily_tti_data.itertuples():
             time = row.time
@@ -69,8 +69,12 @@ def generate_Train(tti_data):
                 time_slot, time_point = label_time[time]
                 daily_trian_y.loc[time_slot, time_point, id_road] = TTI
 
-        train_X = train_X.append(daily_trian_X)
-        train_y = train_y.append(daily_trian_y)
+        train_X = train_X.append(daily_trian_X.reset_index())
+        train_y = train_y.append(daily_trian_y.reset_index(drop=True))
+    train_X['weekday'] = train_X['weekday'].astype(int)
+    train_X['time_slot'] = train_X['time_slot'].astype(int)
+    train_X['time_point'] = train_X['time_point'].astype(int)
+    train_X['id_road'] = train_X['id_road'].astype(int)
     return train_X, train_y
 # def preprocess_tti_no_label(tti_data):
 #     tti_data['id_sample'] = tti_data['id_sample'].astype(int)
@@ -81,8 +85,8 @@ def generate_Train(tti_data):
 generate_time_transfer()
 train_TTI = preprocess_tti(pd.read_csv('./data/train_TTI.csv'))
 train_X, train_y = generate_Train(train_TTI)
-train_X.to_csv('train_X.csv')
-train_y.to_csv('train_y.csv')
+train_X.to_csv('train_X.csv', na_rep='NaN', index=False)
+train_y.to_csv('train_y.csv', na_rep='NaN', index=False)
 # print(train_X)
 # print(train_y)
 # toPredict_noLabel = preprocess_tti_no_label(pd.read_csv('./data/toPredict_noLabel.csv'))
