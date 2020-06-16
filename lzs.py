@@ -2,19 +2,7 @@ import pandas as pd
 import numpy as np
 from datetime import time, timedelta, date, datetime
 from collections import defaultdict
-
-def preprocess_tti(tti_data):
-    del tti_data['speed']
-    tti_data['id_road'] = tti_data['id_road'].astype(int)
-    tti_data['TTI'] = tti_data['TTI'].astype(float)
-    tti_data['time'] = pd.to_datetime(
-        tti_data['time'], infer_datetime_format=True)
-    tti_data['weekday'] = tti_data['time'].dt.dayofweek
-    tti_data['date'] = tti_data['time'].dt.date
-    tti_data['time'] = tti_data['time'].dt.time
-    begin, end = time(7, 30), time(21, 20)
-    tti_data = tti_data[(tti_data['time'] >= begin) & (tti_data['time'] <= end)]
-    return tti_data
+import os.path
 
 id_roads = [276183, 276184, 275911, 275912, 276240, 276241, 
 276264, 276265, 276268, 276269, 276737, 276738]
@@ -28,6 +16,7 @@ label_time = {}
 def add_time(x, delta):
     return (datetime.combine(date.min, x) + delta).time()
 
+# 将时间数据翻译到对应feature或label的时间段和时间点。
 def generate_time_transfer():
     for time_slot, (hour, minute) in enumerate(time_labels_begin):
         period = timedelta(minutes=10)
@@ -39,6 +28,19 @@ def generate_time_transfer():
         for feature_time_point in range(6):
             feature_time[begin_feature].append((time_slot, feature_time_point))
             begin_feature = add_time(begin_feature, period)
+
+def preprocess_tti(tti_data):
+    del tti_data['speed']
+    tti_data['id_road'] = tti_data['id_road'].astype(int)
+    tti_data['TTI'] = tti_data['TTI'].astype(float)
+    tti_data['time'] = pd.to_datetime(
+        tti_data['time'], infer_datetime_format=True)
+    tti_data['weekday'] = tti_data['time'].dt.dayofweek
+    tti_data['date'] = tti_data['time'].dt.date
+    tti_data['time'] = tti_data['time'].dt.time
+    begin, end = time(7, 30), time(21, 20)
+    tti_data = tti_data[(tti_data['time'] >= begin) & (tti_data['time'] <= end)]
+    return tti_data
 
 def generate_Train(tti_data):
     # 共12个路段，每个时间段共6个时间点，12*6=72维数据，加上星期几标志weekday，
@@ -76,20 +78,27 @@ def generate_Train(tti_data):
     train_X['time_point'] = train_X['time_point'].astype(int)
     train_X['id_road'] = train_X['id_road'].astype(int)
     return train_X, train_y
-# def preprocess_tti_no_label(tti_data):
-#     tti_data['id_sample'] = tti_data['id_sample'].astype(int)
-#     tti_data['id_road'] = tti_data['id_road'].astype(int)
-#     tti_data['time'] = pd.to_datetime(
-#         tti_data['time'], infer_datetime_format=True)
-#     return tti_data
+
+def preprocess_tti_no_label(tti_data):
+    tti_data['id_sample'] = tti_data['id_sample'].astype(int)
+    tti_data['id_road'] = tti_data['id_road'].astype(int)
+    tti_data['time'] = pd.to_datetime(
+        tti_data['time'], infer_datetime_format=True)
+    return tti_data
+
 generate_time_transfer()
-train_TTI = preprocess_tti(pd.read_csv('./data/train_TTI.csv'))
-train_X, train_y = generate_Train(train_TTI)
-train_X.to_csv('train_X.csv', na_rep='NaN', index=False)
-train_y.to_csv('train_y.csv', na_rep='NaN', index=False)
+if not os.path.isfile('train_X.csv') or not os.path.isfile('train_y.csv'):
+    print('First generate train data set, might be slow.')
+    train_TTI = preprocess_tti(pd.read_csv('./data/train_TTI.csv'))
+    train_X, train_y = generate_Train(train_TTI)
+    train_X.to_csv('train_X.csv', na_rep='NaN', index=False)
+    train_y.to_csv('train_y.csv', na_rep='NaN', index=False)
+else:
+    train_X, train_y = pd.read_csv('train_X.csv'), pd.read_csv('train_y.csv')
+
 # print(train_X)
 # print(train_y)
-# toPredict_noLabel = preprocess_tti_no_label(pd.read_csv('./data/toPredict_noLabel.csv'))
-# toPredict_train_TTI = preprocess_tti(pd.read_csv('./data/toPredict_train_TTI.csv'))
+toPredict_noLabel = preprocess_tti_no_label(pd.read_csv('./data/toPredict_noLabel.csv'))
+toPredict_train_TTI = preprocess_tti(pd.read_csv('./data/toPredict_train_TTI.csv'))
 # print(train_TTI)
 
