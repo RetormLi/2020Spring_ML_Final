@@ -29,6 +29,7 @@ def generate_time_transfer():
             feature_time[begin_feature].append((time_slot, feature_time_point))
             begin_feature = add_time(begin_feature, period)
 
+
 def preprocess_tti(tti_data, filter=True):
     del tti_data['speed']
     tti_data['id_road'] = tti_data['id_road'].astype(int)
@@ -56,12 +57,14 @@ def generate_Train(tti_data, include_date=False):
     train_y = pd.Series(dtype='float64', name='label')
 
     for (date, weekday), daily_tti_data in tti_data.groupby(['date', 'weekday']):
+
         del daily_tti_data['date']
         del daily_tti_data['weekday']
         daily_trian_X = pd.DataFrame(index=index, columns=columns)
         daily_trian_X['weekday'] = weekday
         if include_date:
             daily_trian_X['date'] = date
+
         daily_trian_y = pd.Series(index=index, dtype='float64', name='label')
 
         for row in daily_tti_data.itertuples():
