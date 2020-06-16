@@ -45,7 +45,7 @@ def preprocess_tti(tti_data, filter=True):
 
 def generate_Train(tti_data, include_date=False):
 
-    # 共12个路段，每个时间段共6个时间点，12*6=72维数据，加上星期几标志weekday，
+    # 共12个路段，每个时间段共6个特征时间点，12*6=72维数据，加上星期几标志weekday，
     # 时间段标志time_slot，预测时间点标志time_point，预测路段标志id_road，处理每日数据时作为Index方便查找
     columns = [str(id_road) + '_' + str(feature_time_point) for id_road in id_roads for feature_time_point in range(6)] + ['weekday']#, 'time_slot', 'time_point', 'id_road']
     
@@ -98,11 +98,15 @@ generate_time_transfer()
 if not os.path.isfile('test_X.csv'):
     print('Generate test data set X')
     toPredict_train_TTI = preprocess_tti(pd.read_csv('./data/toPredict_train_TTI.csv'), filter=False)
+    # 保留日期数据，为了合并
     test_X, _ = generate_Train(toPredict_train_TTI, include_date=True)
+    # 有冗余。去除不需要预测的时间段。
     test_X = test_X.dropna()
     test_X.to_csv('test_X.csv', na_rep='NaN', index=False)
 else:
     test_X = pd.read_csv('test_X.csv')
+
+# 保留日期数据，为了合并
 test_X, date_info = test_X.iloc[:, :-1], test_X['date']
 
 if not os.path.isfile('train_X.csv') or not os.path.isfile('train_y.csv'):
@@ -113,50 +117,21 @@ if not os.path.isfile('train_X.csv') or not os.path.isfile('train_y.csv'):
     train_y.to_csv('train_y.csv', na_rep='NaN', index=False)
 else:
     train_X, train_y = pd.read_csv('train_X.csv'), pd.read_csv('train_y.csv')
-# print(train_X)
-# print(train_y)
-# print(test_X)
-# print(date_info)
-# import lightgbm as lgb
-# from sklearn.metrics import mean_squared_error
-# from sklearn.datasets import load_iris
-# from sklearn.model_selection import train_test_split
 
-# # 转换为Dataset数据格式
-# lgb_train = lgb.Dataset(X_train, y_train)
-# lgb_eval = lgb.Dataset(X_test, y_test, reference=lgb_train)
+# 去掉NaN样本或标签
+train_X['label'] = train_y
+train_X.dropna(inplace=True)
+train_X, train_y = train_X.iloc[:, :-1], train_X['label']
 
-# # 参数
-# params = {
-#     'task': 'train',
-#     'boosting_type': 'gbdt',  # 设置提升类型
-#     'objective': 'regression',  # 目标函数
-#     'metric': {'l2', 'auc'},  # 评估函数
-#     'num_leaves': 31,  # 叶子节点数
-#     'learning_rate': 0.05,  # 学习速率
-#     'feature_fraction': 0.9,  # 建树的特征选择比例
-#     'bagging_fraction': 0.8,  # 建树的样本采样比例
-#     'bagging_freq': 5,  # k 意味着每 k 次迭代执行bagging
-#     'verbose': 1  # <0 显示致命的, =0 显示错误 (警告), >0 显示信息
+# from lightgbm import LGBMRegressor
+# from sklearn.model_selection import GridSearchCV
+
+# # 网格搜索，参数优化
+# estimator = LGBMRegressor(num_leaves=31)
+# param_grid = {
+#     'learning_rate': [0.01, 0.1, 1],
+#     'n_estimators': [20, 40]
 # }
-
-# # 模型训练
-# gbm = lgb.train(params, lgb_train, num_boost_round=20, valid_sets=lgb_eval, early_stopping_rounds=5)
-
-# # 模型保存
-# gbm.save_model('model.txt')
-
-# # 模型加载
-# gbm = lgb.Booster(model_file='model.txt')
-
-# # 模型预测
-# y_pred = gbm.predict(X_test, num_iteration=gbm.best_iteration)
-
-# # 模型评估
-# print('The rmse of prediction is:', mean_squared_error(y_test, y_pred) ** 0.5)
-
-# print(train_X)
-# print(train_y)
-
-# print(train_TTI)
-
+# gbm = GridSearchCV(estimator, param_grid)
+# gbm.fit(train_X, train_y)
+# print('Best parameters found by grid search are:', gbm.best_params_)
