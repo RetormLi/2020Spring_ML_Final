@@ -123,15 +123,21 @@ train_X['label'] = train_y
 train_X.dropna(inplace=True)
 train_X, train_y = train_X.iloc[:, :-1], train_X['label']
 
-# from lightgbm import LGBMRegressor
-# from sklearn.model_selection import GridSearchCV
+from lightgbm import LGBMRegressor
+from sklearn.model_selection import GridSearchCV
 
-# # 网格搜索，参数优化
-# estimator = LGBMRegressor(num_leaves=31)
-# param_grid = {
-#     'learning_rate': [0.01, 0.1, 1],
-#     'n_estimators': [20, 40]
-# }
-# gbm = GridSearchCV(estimator, param_grid)
-# gbm.fit(train_X, train_y)
-# print('Best parameters found by grid search are:', gbm.best_params_)
+# 网格搜索，参数优化
+estimator = LGBMRegressor(n_jobs=-1)
+param_grid = {
+    'learning_rate': [0.05, 0.1, 0.15],
+    'n_estimators': [100, 200, 300],
+    'max_depth':  [4, 5, 8],
+    'num_leaves': [15, 31, 63],
+    'subsample': [0.6, 0.7, 0.8],
+    'colsample_bytree': [0.6, 0.7, 0.8]
+}
+gbm = GridSearchCV(estimator, param_grid)
+print('Find best params, could be really slow.')
+gbm.fit(train_X, train_y)
+print('Best parameters found by grid search are:', gbm.best_params_)
+# Best parameters found by grid search are: {'colsample_bytree': 0.8, 'learning_rate': 0.05, 'max_depth': 8, 'n_estimators': 300, 'num_leaves': 63, 'subsample': 0.6}
