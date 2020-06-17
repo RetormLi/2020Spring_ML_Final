@@ -86,16 +86,7 @@ def generate_Train(tti_data, include_date=False):
     train_X['id_road'] = train_X['id_road'].astype(int)
     return train_X, train_y
 
-def preprocess_tti_no_label(tti_data):
-    # tti_data['id_sample'] = tti_data['id_sample'].astype(int)
-    tti_data['id_road'] = tti_data['id_road'].astype(int)
-    tti_data['time'] = pd.to_datetime(
-        tti_data['time'], infer_datetime_format=True)
-    tti_data['date'] = tti_data['time'].dt.date
-    tti_data['time'] = tti_data['time'].dt.time
-    tti_data[['time_slot', 'time_point']] = tti_data.apply(lambda row: label_time[row['time']], axis=1, result_type="expand")
-    del tti_data['time']
-    return tti_data
+
 
 generate_time_transfer()
 
@@ -127,42 +118,64 @@ train_X['label'] = train_y
 train_X.dropna(inplace=True)
 train_X, train_y = train_X.iloc[:, :-1], train_X['label']
 
+def categorize(data):
+    if 'weekday' in data:
+        data['weekday'] = data['weekday'].astype('category')
+    data['time_slot'] = data['time_slot'].astype('category')
+    data['time_point'] = data['time_point'].astype('category')
+    data['id_road'] = data['id_road'].astype('category')
+    return data
+train_X, test_X = categorize(train_X), categorize(test_X)
+
 import lightgbm as lgbm
 from lightgbm import LGBMRegressor
 from sklearn.model_selection import GridSearchCV
 
+params = {
+    'objective': 'regression_l1',
+    'colsample_bytree': 0.8, 
+    'learning_rate': 0.05, 
+    'max_depth': 4,
+    'n_jobs' : -1,
+    'num_leaves' : 15,
+    'n_estimators': 6000,
+    'colsample_bytree': 0.8,
+    'subsample' : 0.8,
+    'subsample_freq' : 2
+}
+# Best score: 0.6483964125096509
 # 网格搜索，参数优化
-# estimator = LGBMRegressor(n_jobs=-1)
+# estimator = LGBMRegressor(**params)
 # param_grid = {
-#     'learning_rate': [0.05, 0.1, 0.15],
-#     'n_estimators': [100, 200, 300],
-#     'max_depth':  [4, 5, 8],
-#     'num_leaves': [15, 31, 63],
-#     'subsample': [0.6, 0.7, 0.8],
-#     'colsample_bytree': [0.6, 0.7, 0.8]
+#     'n_estimators' : [4000, 5000, 6000]
 # }
-# gbm = GridSearchCV(estimator, param_grid)
+# search = GridSearchCV(estimator, param_grid, n_jobs=-1)
 # print('Find best params, could be really slow.')
-# gbm.fit(train_X, train_y)
-# print('Best parameters found by grid search are:', gbm.best_params_)
+# search.fit(train_X, train_y)
+# print('Best parameters found by grid search are:', search.best_params_)
+# print('Best score:', search.best_score_)
 # Best parameters found by grid search are: {'colsample_bytree': 0.8, 'learning_rate': 0.05, 'max_depth': 8, 'n_estimators': 300, 'num_leaves': 63, 'subsample': 0.6}
+
+
+
 if not os.path.isfile('model.txt'):
     train_set = lgbm.Dataset(data=train_X, label=train_y)
-    params = {
-        'colsample_bytree': 0.8, 
-        'learning_rate': 0.05, 
-        'max_depth': 8, 
-        'n_estimators': 300, 
-        'num_leaves': 63, 
-        'subsample': 0.6
-    }
     model = lgbm.train(params=params, train_set=train_set, categorical_feature=['weekday','time_slot','time_point','id_road'])
     model.save_model('model.txt')
 else:
     model = lgbm.Booster(model_file='model.txt')
 test_y = model.predict(test_X)
 test_X['label'] = test_y
-#TODO: merge test_y with to_Predict_noLabel
+def preprocess_tti_no_label(tti_data):
+    # tti_data['id_sample'] = tti_data['id_sample'].astype(int)
+    tti_data['id_road'] = tti_data['id_road'].astype(int)
+    tti_data['time'] = pd.to_datetime(
+        tti_data['time'], infer_datetime_format=True)
+    tti_data['date'] = tti_data['time'].dt.date
+    tti_data['time'] = tti_data['time'].dt.time
+    tti_data[['time_slot', 'time_point']] = tti_data.apply(lambda row: label_time[row['time']], axis=1, result_type="expand")
+    del tti_data['time']
+    return categorize(tti_data)
 test_X['date'] = date_info
 test_y = test_X[['date', 'time_slot', 'time_point', 'id_road', 'label']]
 noLabel = preprocess_tti_no_label(pd.read_csv('./data/toPredict_noLabel.csv'))
