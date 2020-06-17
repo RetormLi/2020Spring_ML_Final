@@ -1,5 +1,6 @@
 import pandas as pd
 import datetime
+from ast import literal_eval
 
 
 def gps_str_to_list(gps_data):
@@ -90,34 +91,33 @@ def in_block(sample, block):
     return False
 
 
-def cars(x, y):
-    for i in range(len(x)):
+def cars(x, y): 
+    for i in range(len(x)): # i是每条轨迹
         j = 0
-        temp1 = ''
-        temp2 = ''
-        while j < len(x[i][2:-3].split("], [")):
-            gps = (float(x[i][2:-3].split("], [")[j].split(", ")[0]), float(x[i][2:-3].split("], [")[j].split(", ")[1]))
+        temp1 = '' # 后续会放入上一个点的路段
+        temp2 = '' # 后续会放入上一个点的所属时间（每10分钟为一个时间区间）
+        while j < len(x[i]): # j是每条轨迹上的每个点
+            gps = (x[i][j][0], x[i][j][1]) # 第j个点的gps
             for block in roads.keys():
                 if in_block(gps, roads[block]):
-                    road = get_road(float(x[i][2:-3].split("], [")[j].split(", ")[3]), block)
-                    day = x[i][2:-3].split("], [")[j].split(", ")[5][1:5]+"-"+x[i][2:-3].split("], [")[j].split(", ")[5][6:8]+"-"+x[i][2:-3].split("], [")[j].split(", ")[5][9:-1]+" "+x[i][2:-3].split("], [")[j].split(", ")[4][1:-2]+"0"
-                    if (road != temp1 or day != temp2) and temp1 != '' and temp2 != '':
-                        idx = [k for k in y[y['id_road'].values == temp1].index if k in y[y['day'].values == day].index]
-                        y.loc[idx[0], 'count'] += 1
-                        print(idx[0])
-                    temp1 = road
+                    road = get_road(x[i][j][3], block) # 第j个点的路段
+                    day = x[i][j][5][:4]+"-"+x[i][j][5][5:7]+"-"+x[i][j][5][8:]+" "+x[i][j][4][:-1]+"0" 
+                    # 第j个点的所属时间（日期-小时-十分，如2019-12-21 08:30）
+                    if (road != temp1 or day != temp2) and temp1 != '' and temp2 != '': 
+                    # 若第j个点的路段或时间和前一个点不一样，说明该车换了一条路或者时间过了，那就需要将车在刚才时间走的那条路段的车辆数+1，后面and temp是排除第一个点）
+                        idx = [i for i in y[y['id_road'].values == temp1].index if i in y[y['day'].values == day].index] 
+                        # 前一个点的路段和时间（即车刚才走的那条路）在tti表中的序号
+                        y.loc[idx[0], 'count'] += 1 # 该序号的车辆数+1
+                    temp1 = road 
                     temp2 = day
-            j += 3
+            j += 10 # 每次跳过10个点
     return y
 
 
 g1 = pd.read_csv('pred_gps_0-10000-1.csv') #g1就是用gps_str_to_list跑出来的前1w条测试集的数据
+g1['gps_records'] = g1['gps_records'].apply(literal_eval)
 
 x = g1['gps_records'].tolist()
-
-print(x[0][2:-3].split("], [")[0].split(", "))
-print((float(g1['gps_records'][5][2:-3].split("], [")[0].split(", ")[0]), float(g1['gps_records'][5][2:-3].split("], [")[0].split(", ")[1])))
-
 
 tti_pred_path = "D:/third/ML/final/traffic1/toPredict_train_TTI.csv"
 tti_pred_data = pd.read_csv(tti_pred_path)
