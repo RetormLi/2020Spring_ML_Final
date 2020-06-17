@@ -55,7 +55,7 @@ roads_direction = {
     '276269': 4,
     '276738': 3,
     '276737': 4,
-},
+}
 
 
 def get_road(direction, roads):
