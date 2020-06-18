@@ -49,6 +49,11 @@ def preprocess_tti(tti_data, filter=True):
     return tti_data
 
 
+def time_to_fraction(datetime):
+    second = datetime.hour * 3600 + datetime.minute * 60
+    return second / 86400
+
+
 def generate_Train(tti_data):
     road_train_X = []
     road_train_Y = []
@@ -57,6 +62,7 @@ def generate_Train(tti_data):
     init = False
     for row in tti_data.itertuples():
         time = row.time
+        weekday = row.weekday
         TTI = round(row.TTI, 5)
         if len(sample) == 6:
             init = True
@@ -64,7 +70,8 @@ def generate_Train(tti_data):
             sample.append(TTI)
         else:
             sample.append(TTI)
-            road_train_X.append(sample[:-1])
+            road_train_X.append(
+                sample[:-1]+[time_to_fraction(time), weekday/7])
             road_train_Y.append(sample[-1])
             sample = sample[1:]
     return np.array(road_train_X), np.array(road_train_Y)
@@ -102,26 +109,7 @@ generate_time_transfer()
 path = 'E:/2020Spring/MachineLearning/2020Spring_ML_Final/'
 
 # if not os.path.isfile('data/276183_knn_train_X.csv'):
-# print('Generate train data set, might be slow.')
-# train_TTI = preprocess_tti(pd.read_csv(
-#     'G:/data/datas/traffic1/train_TTI.csv'))
-# train_X, train_y = generate_Train(train_TTI)
-# road_ttis = dict()
-# for road, road_tti in train_TTI.groupby(['id_road']):
-#     del road_tti['id_road']
-#     del road_tti['date']
-#     del road_tti['weekday']
-#     road_ttis[str(road)] = pd.DataFrame(road_tti)
 
-# for road in id_roads:
-#     road = str(road)
-#     road_train_X, road_train_Y = generate_Train(road_ttis[road])
-#     assert (len(road_train_X) == len(road_train_Y))
-#     assert(len(road_train_X[-1]) == 6)
-#     np.savetxt('data/'+road+'_knn_train_X.csv',
-#                road_train_X, fmt='%f')
-#     np.savetxt('data/'+road + '_knn_train_Y.csv',
-#                road_train_Y, fmt='%f')
 print('Generate train data set, might be slow.')
 train_TTI = preprocess_tti(pd.read_csv(
     'G:/data/datas/traffic1/train_TTI.csv'))
@@ -130,7 +118,6 @@ road_ttis = dict()
 for road, road_tti in train_TTI.groupby(['id_road']):
     del road_tti['id_road']
     del road_tti['date']
-    del road_tti['weekday']
     road_ttis[str(road)] = pd.DataFrame(road_tti)
 
 # TODO 记得变回来array
@@ -140,12 +127,12 @@ for road in id_roads:
     road = str(road)
     road_train_X, road_train_Y = generate_Train(road_ttis[road])
     assert (len(road_train_X) == len(road_train_Y))
-    assert (len(road_train_X[-1]) == 6)
+    assert (len(road_train_X[-1]) == 8)
     train_X.extend(road_train_X)
     train_Y.extend(road_train_Y)
-    np.savetxt('data/'+road+'_knn_train_X.csv',
+    np.savetxt('new_data/'+road+'_knn_train_X.csv',
                road_train_X, fmt='%f')
-    np.savetxt('data/'+road + '_knn_train_Y.csv',
+    np.savetxt('new_data/'+road + '_knn_train_Y.csv',
                road_train_Y, fmt='%f')
 # np.savetxt('data/all_knn_train_X.csv',
 #            np.array(train_X), fmt='%f')
