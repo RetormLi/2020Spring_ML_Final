@@ -7,6 +7,8 @@ from sklearn.metrics import mean_absolute_error
 import random
 import pandas as pd
 
+# 预测前请先运行knn.py构造训练集
+
 id_roads = ['276183', '276184', '275911', '275912', '276240', '276241',
             '276264', '276265', '276268', '276269', '276737', '276738']
 
@@ -56,7 +58,7 @@ def strtime_to_second(strtime):
     return second / 86400
 
 
-def time_predict(pred_y):
+def time_predict():
     # 10mins
     MINS_TO_SECONDS = 0.006944444444444444
 
@@ -87,7 +89,7 @@ def time_predict(pred_y):
         pred_y.append(x_sample3)
 
 
-def not_time_predict(pred_y):
+def not_time_predict():
     for index in range(0, target.shape[0]):
         road = target[index][1]
         model = kNNs[str(road)]

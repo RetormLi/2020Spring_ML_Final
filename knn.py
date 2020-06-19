@@ -54,10 +54,9 @@ def time_to_fraction(datetime):
     return second / 86400
 
 
-def generate_Train(tti_data):
+def generate_time_Train(tti_data):
     road_train_X = []
     road_train_Y = []
-    count = 0
     sample = []
     init = False
     for row in tti_data.itertuples():
@@ -72,6 +71,28 @@ def generate_Train(tti_data):
             sample.append(TTI)
             road_train_X.append(
                 sample[:-1]+[time_to_fraction(time), weekday/7])
+            road_train_Y.append(sample[-1])
+            sample = sample[1:]
+    return np.array(road_train_X), np.array(road_train_Y)
+
+
+def generate_Train(tti_data):
+    road_train_X = []
+    road_train_Y = []
+    sample = []
+    init = False
+    for row in tti_data.itertuples():
+        time = row.time
+        weekday = row.weekday
+        TTI = round(row.TTI, 5)
+        if len(sample) == 6:
+            init = True
+        if not init:
+            sample.append(TTI)
+        else:
+            sample.append(TTI)
+            road_train_X.append(
+                sample[:-1])
             road_train_Y.append(sample[-1])
             sample = sample[1:]
     return np.array(road_train_X), np.array(road_train_Y)
@@ -92,20 +113,6 @@ def preprocess_tti_no_label(tti_data):
 
 generate_time_transfer()
 
-if not os.path.isfile('data/276183_knn_test_X.csv'):
-    print('Generate test data set X')
-    toPredict_train_TTI = preprocess_tti(pd.read_csv(
-        'G:/data/datas/traffic1/toPredict_train_TTI.csv'), filter=False)
-    toPredict_no_label = preprocess_tti(pd.read_csv(
-        'G:/data/datas/traffic1/toPredict_noLabel.csv'), filter=False)
-    # 保留日期数据，为了合并
-    test_X, _ = generate_Train(toPredict_train_TTI, include_date=True)
-    # 有冗余。去除不需要预测的时间段。
-    test_X = test_X.dropna()
-    test_X.to_csv('knn_test_X.csv', na_rep='NaN', index=False)
-else:
-    test_X = np.loadtxt('knn_test_X.csv')
-
 path = 'E:/2020Spring/MachineLearning/2020Spring_ML_Final/'
 
 if not os.path.isfile('new_data/276183_knn_train_X.csv'):
@@ -113,19 +120,18 @@ if not os.path.isfile('new_data/276183_knn_train_X.csv'):
     print('Generate train data set, might be slow.')
     train_TTI = preprocess_tti(pd.read_csv(
         'G:/data/datas/traffic1/train_TTI.csv'))
-    train_X, train_y = generate_Train(train_TTI)
+    train_X, train_y = generate_time_Train(train_TTI)
     road_ttis = dict()
     for road, road_tti in train_TTI.groupby(['id_road']):
         del road_tti['id_road']
         del road_tti['date']
         road_ttis[str(road)] = pd.DataFrame(road_tti)
 
-    # TODO 记得变回来array
     train_X = []
     train_Y = []
     for road in id_roads:
         road = str(road)
-        road_train_X, road_train_Y = generate_Train(road_ttis[road])
+        road_train_X, road_train_Y = generate_time_Train(road_ttis[road])
         assert (len(road_train_X) == len(road_train_Y))
         assert (len(road_train_X[-1]) == 8)
         train_X.extend(road_train_X)
