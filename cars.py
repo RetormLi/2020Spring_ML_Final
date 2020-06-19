@@ -1,5 +1,6 @@
 import pandas as pd
 import datetime
+import os
 from ast import literal_eval
 
 
@@ -128,7 +129,7 @@ def cars(x, y):
                         y.loc[idx[0], 'count'] += 1  # 该序号的车辆数+1
                     temp1 = road
                     temp2 = day
-            j += 10  # 每次跳过10个点
+            j += 20  # 每次跳过20个点
         print(i)
     return y
 
@@ -139,11 +140,18 @@ g1['gps_records'] = g1['gps_records'].apply(literal_eval)
 
 x = g1['gps_records'].tolist()
 
-tti_pred_path = "G:/data/datas/traffic1/toPredict_train_TTI.csv"
-tti_pred_data = pd.read_csv(tti_pred_path)
-tti_pred_data = preprocess_tti(tti_pred_data)
-tti_pred_data['count'] = 0
+if not os.path.isfile('tti_pred_0-10000.csv'):
 
+    tti_pred_path = "G:/data/datas/traffic1/toPredict_train_TTI.csv"
+    tti_pred_data = pd.read_csv(tti_pred_path)
+    tti_pred_data = preprocess_tti(tti_pred_data)
+    tti_pred_data['count'] = 0
 
-tti_pred_data = cars(x, tti_pred_data)
-tti_pred_data.to_csv("tti_pred_0-10000.csv")
+    tti_pred_data = cars(x, tti_pred_data)
+    tti_pred_data.to_csv("tti_pred_0-10000.csv")
+
+else:
+    tti_pred_data = pd.read_csv("tti_pred_0-10000.csv")
+    tti_pred_data = cars(x, tti_pred_data)
+    tti_pred_data.to_csv("tti_pred_0-10000.csv")
+    # TODO
