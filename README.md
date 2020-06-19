@@ -10,7 +10,7 @@ Website: https://competition.huaweicloud.com/information/1000040088/introduction
 - knn.py: generate kNN training set
 - predict.py: kNN predict
 - val.py: validation for kNN
-- lzs.py: develop LightBGM model
+- lgbm.py: develop LightBGM model
 
 # score
 best mean_absolute_error: 0.1195 (in lgbm)
